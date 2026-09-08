@@ -1,28 +1,22 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { getPostUrlBySlug } from "@utils/url-utils";
-import PostCard from "./PostCard.astro";
+import { getCategoryUrl } from "../utils/url-utils";
 
 const { page } = Astro.props;
 
-let delay = 0;
-const interval = 50;
+const entries = await Promise.all(page.data.map(async (entry: CollectionEntry<"posts">) => ({ entry, rendered: await entry.render() })));
 ---
 <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4 mb-4">
-    {page.data.map((entry: CollectionEntry<"posts">) => (
-        <PostCard
-                entry={entry}
-                title={entry.data.title}
-                tags={entry.data.tags}
-                category={entry.data.category}
-                published={entry.data.published}
-                updated={entry.data.updated}
-                url={getPostUrlBySlug(entry.slug)}
-                image={entry.data.image}
-                description={entry.data.description}
-                draft={entry.data.draft}
-                class:list="onload-animation"
-                style={`animation-delay: calc(var(--content-delay) + ${delay++ * interval}ms);`}
-        ></PostCard>
+    {entries.map(({entry, rendered}) => (
+        <article class="post-list-item">
+            <h2><a href={getPostUrlBySlug(entry.slug)}>{entry.data.title}</a></h2>
+            <div class="post-list-meta">
+                <time datetime={entry.data.published.toISOString()}>{entry.data.published.toISOString().slice(0, 10)}</time>
+                <a href={getCategoryUrl(entry.data.category)}>{entry.data.category}</a>
+                {entry.data.draft && <span>草稿</span>}
+            </div>
+            <p class="line-clamp-2">{entry.data.description || rendered.remarkPluginFrontmatter.excerpt}</p>
+        </article>
     ))}
 </div>

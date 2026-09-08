@@ -5,19 +5,26 @@ import PostPage from "../components/PostPage.astro";
 import { PAGE_SIZE } from "../constants/constants";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getSortedPosts } from "../utils/content-utils";
+import PhotographyGrid from "../components/PhotographyGrid.astro";
+import { siteConfig } from "../config";
 
 export const getStaticPaths = (async ({ paginate }) => {
 	const allBlogPosts = await getSortedPosts();
-	return paginate(allBlogPosts, { pageSize: PAGE_SIZE });
+	return paginate(allBlogPosts.filter(post => ["小说", "随笔"].includes(post.data.category || "")), { pageSize: PAGE_SIZE });
 }) satisfies GetStaticPaths;
 // https://github.com/withastro/astro/issues/6507#issuecomment-1489916992
 
 const { page } = Astro.props;
 
 const len = page.data.length;
+const photographs = (await getSortedPosts()).filter(post => post.data.category === "摄影").slice(0, 2);
 ---
 
 <MainGridLayout>
+    <header class="collection-heading"><h1>{siteConfig.title}</h1><p>{siteConfig.subtitle}</p></header>
+    <h2 class="section-heading">最新文字</h2>
+    {len === 0 && <p class="empty-state">这里将收录小说与随笔。</p>}
     <PostPage page={page}></PostPage>
-    <Pagination class="mx-auto onload-animation" page={page} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
+    {page.lastPage > 1 && <Pagination class="mx-auto onload-animation" page={page} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>}
+    <section aria-label="最近的摄影"><h2 class="section-heading">最近的摄影</h2><PhotographyGrid posts={photographs} /></section>
 </MainGridLayout>

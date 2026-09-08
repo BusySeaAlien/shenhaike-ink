@@ -1,0 +1,62 @@
+:root {
+  --font-literary: "Songti SC", "STSong", "SimSun", serif;
+  --font-interface: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+html body { font-family: var(--font-interface); color: #26343d; }
+html:root { --page-bg: #f5f7f8; --card-bg: #f5f7f8; --radius-large: 8px; --line-divider: #dce3e7; --primary: oklch(from #315f7d l c calc(h + var(--hue) - 250)); }
+html:root.dark { --page-bg: #17232b; --card-bg: #17232b; --line-divider: #34444e; --primary: oklch(from #91bcd7 l c calc(h + var(--hue) - 250)); }
+html.dark body { color: #e0e6e9; }
+body h1, body h2, body h3, #navbar > div > a, .collection-heading { font-family: var(--font-literary); }
+body .card-base { box-shadow: none; }
+#main-grid { column-gap: 40px; }
+#navbar > div { border-bottom: 1px solid var(--line-divider); }
+#navbar .hidden.md\:flex a { padding-inline: 12px; font-weight: 400; }
+.collection-heading { padding: 36px 24px 32px; }
+.collection-heading h1 { font-size: 36px; line-height: 1.4; }
+.collection-heading p { margin-top: 12px; font-size: 16px; color: var(--primary); }
+.section-heading { font-size: 23px; margin: 24px 24px 12px; }
+.empty-state { padding: 32px 24px 48px; color: inherit; opacity: .75; border-bottom: 1px solid var(--line-divider); }
+.author-profile { padding-top: 36px; }
+.author-profile > a { width: 80px; height: 80px; margin-inline: auto; }
+.author-profile .text-neutral-400 { color: inherit; opacity: .75; font-size: 14px; line-height: 1.8; }
+#sidebar .card-base { border-bottom: 1px solid var(--line-divider); border-radius: 0; }
+#sidebar { font-size: 14px; }
+.post-list-item { padding: 26px 24px; border-bottom: 1px solid var(--line-divider); }
+.post-list-item h2 { font-size: 27px; line-height: 1.5; }
+.post-list-item p { line-height: 1.85; margin-top: 14px; }
+.post-list-item .post-list-meta { font-size: 13px; margin-top: 10px; display: flex; flex-wrap: wrap; gap: 12px; }
+.post-list-item a:hover, .photography-item:hover h3 { color: var(--primary); }
+.photography-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; padding: 16px 24px 32px; }
+.photography-item { min-width: 0; }
+.photography-cover { aspect-ratio: 4 / 3; border-radius: 6px; }
+.missing-cover { display: grid; place-items: center; background: var(--btn-regular-bg); }
+.photography-item h3 { font-size: 22px; margin-top: 12px; }
+.photography-item time { font-size: 13px; opacity: .75; }
+.photography-item p { margin-top: 8px; line-height: 1.8; }
+#main-grid:has(.reading-page) { grid-template-columns: minmax(0, 1fr); max-width: 840px; }
+#main-grid:has(.reading-page) #sidebar { display: none; }
+#main-grid:has(.reading-page) main { grid-column: 1 / -1; }
+#post-container { padding: 36px 40px; }
+#post-container .custom-md { max-width: 720px !important; margin-inline: auto; font-family: var(--font-literary); font-size: 19px; line-height: 1.95; color: inherit; }
+#post-container .custom-md p { margin-block: .85em; line-height: inherit; }
+#post-container .literary-content p { text-indent: 2em; }
+#post-container .literary-content :is(blockquote, li, figure, figcaption, td) p,
+#post-container .literary-content p:has(img) { text-indent: 0; }
+#post-container .custom-md img, #post-cover img { height: auto; object-fit: contain; }
+#post-container [data-pagefind-meta="title"] { font-family: var(--font-literary); line-height: 1.5; }
+#post-container [data-pagefind-meta="title"]::before { display: none; }
+body:not(:has(.reading-page)) #toc-wrapper { display: none; }
+.mobile-reading-toc { margin-block: 20px; padding: 12px 0; border-block: 1px solid var(--line-divider); }
+.mobile-reading-toc summary { cursor: pointer; }
+.mobile-reading-toc a { display: block; padding: 6px 12px; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+@media (min-width: 1536px) { .mobile-reading-toc { display: none; } }
+@media (max-width: 767px) {
+  #post-container { padding: 24px 22px; }
+  #post-container .custom-md { font-size: 17px; line-height: 1.9; }
+  .photography-grid { grid-template-columns: minmax(0, 1fr); }
+  .collection-heading h1 { font-size: 30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
