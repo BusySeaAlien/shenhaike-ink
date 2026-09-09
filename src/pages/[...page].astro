@@ -5,7 +5,6 @@ import PostPage from "../components/PostPage.astro";
 import { PAGE_SIZE } from "../constants/constants";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getSortedPosts } from "../utils/content-utils";
-import PhotographyGrid from "../components/PhotographyGrid.astro";
 import { siteConfig } from "../config";
 
 export const getStaticPaths = (async ({ paginate }) => {
@@ -17,7 +16,6 @@ export const getStaticPaths = (async ({ paginate }) => {
 const { page } = Astro.props;
 
 const len = page.data.length;
-const photographs = (await getSortedPosts()).filter(post => post.data.category === "摄影").slice(0, 2);
 ---
 
 <MainGridLayout>
@@ -26,5 +24,4 @@ const photographs = (await getSortedPosts()).filter(post => post.data.category =
     {len === 0 && <p class="empty-state">这里将收录小说与随笔。</p>}
     <PostPage page={page}></PostPage>
     {page.lastPage > 1 && <Pagination class="mx-auto onload-animation" page={page} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>}
-    <section aria-label="最近的摄影"><h2 class="section-heading">最近的摄影</h2><PhotographyGrid posts={photographs} /></section>
 </MainGridLayout>

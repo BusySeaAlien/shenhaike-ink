@@ -25,14 +25,7 @@ body .card-base { box-shadow: none; }
 .post-list-item h2 { font-size: 27px; line-height: 1.5; }
 .post-list-item p { line-height: 1.85; margin-top: 14px; }
 .post-list-item .post-list-meta { font-size: 13px; margin-top: 10px; display: flex; flex-wrap: wrap; gap: 12px; }
-.post-list-item a:hover, .photography-item:hover h3 { color: var(--primary); }
-.photography-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; padding: 16px 24px 32px; }
-.photography-item { min-width: 0; }
-.photography-cover { aspect-ratio: 4 / 3; border-radius: 6px; }
-.missing-cover { display: grid; place-items: center; background: var(--btn-regular-bg); }
-.photography-item h3 { font-size: 22px; margin-top: 12px; }
-.photography-item time { font-size: 13px; opacity: .75; }
-.photography-item p { margin-top: 8px; line-height: 1.8; }
+.post-list-item a:hover { color: var(--primary); }
 #main-grid:has(.reading-page) { grid-template-columns: minmax(0, 1fr); max-width: 840px; }
 #main-grid:has(.reading-page) #sidebar { display: none; }
 #main-grid:has(.reading-page) main { grid-column: 1 / -1; }
@@ -54,7 +47,6 @@ body:not(:has(.reading-page)) #toc-wrapper { display: none; }
 @media (max-width: 767px) {
   #post-container { padding: 24px 22px; }
   #post-container .custom-md { font-size: 17px; line-height: 1.9; }
-  .photography-grid { grid-template-columns: minmax(0, 1fr); }
   .collection-heading h1 { font-size: 30px; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -60,7 +60,6 @@ export const navBarConfig: NavBarConfig = {
 		{ name: "首页", url: "/" },
 		{ name: "小说", url: "/archive/?category=小说" },
 		{ name: "随笔", url: "/archive/?category=随笔" },
-		{ name: "摄影", url: "/photography/" },
 		LinkPreset.Archive,
 		LinkPreset.About,
 	],
