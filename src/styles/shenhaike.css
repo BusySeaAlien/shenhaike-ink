@@ -10,6 +10,10 @@ body h1, body h2, body h3, #navbar > div > a, .collection-heading { font-family:
 body .card-base { box-shadow: none; }
 #main-grid { column-gap: 40px; }
 #navbar > div { border-bottom: 1px solid var(--line-divider); }
+#navbar .brand-lockup { display: flex; align-items: center; gap: 9px; }
+#navbar .brand-wordmark { color: var(--primary); font-family: var(--font-interface); font-size: 0.875rem; font-weight: 700; letter-spacing: .16em; transition: opacity .18s ease-out; }
+#navbar .brand-wordmark:hover { opacity: .68; }
+#navbar .brand-divider { color: var(--primary); font-size: 0.75rem; opacity: .45; }
 #navbar .hidden.md\:flex a { padding-inline: 12px; font-weight: 400; }
 .collection-heading { padding: 36px 24px 32px; }
 .collection-heading h1 { font-size: 36px; line-height: 1.4; }
