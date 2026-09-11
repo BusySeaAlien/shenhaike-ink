@@ -7,9 +7,13 @@ import WidgetLayout from "./WidgetLayout.astro";
 
 const categories = await getCategoryList();
 for (const name of ["小说", "随笔"]) {
-    if (!categories.some(category => category.name === name)) {
-        categories.push({ name, count: 0, url: `/archive/?category=${encodeURIComponent(name)}` });
-    }
+	if (!categories.some((category) => category.name === name)) {
+		categories.push({
+			name,
+			count: 0,
+			url: `/archive/?category=${encodeURIComponent(name)}`,
+		});
+	}
 }
 
 const COLLAPSED_HEIGHT = "7.5rem";

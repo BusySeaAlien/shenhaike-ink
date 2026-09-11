@@ -2,14 +2,19 @@
 import type { GetStaticPaths } from "astro";
 import Pagination from "../components/control/Pagination.astro";
 import PostPage from "../components/PostPage.astro";
+import { siteConfig } from "../config";
 import { PAGE_SIZE } from "../constants/constants";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getSortedPosts } from "../utils/content-utils";
-import { siteConfig } from "../config";
 
 export const getStaticPaths = (async ({ paginate }) => {
 	const allBlogPosts = await getSortedPosts();
-	return paginate(allBlogPosts.filter(post => ["小说", "随笔"].includes(post.data.category || "")), { pageSize: PAGE_SIZE });
+	return paginate(
+		allBlogPosts.filter((post) =>
+			["小说", "随笔"].includes(post.data.category || ""),
+		),
+		{ pageSize: PAGE_SIZE },
+	);
 }) satisfies GetStaticPaths;
 // https://github.com/withastro/astro/issues/6507#issuecomment-1489916992
 

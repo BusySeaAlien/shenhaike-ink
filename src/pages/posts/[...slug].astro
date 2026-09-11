@@ -24,7 +24,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content, headings } = await entry.render();
-const minHeadingDepth = Math.min(...headings.map(h => h.depth));
+const minHeadingDepth = Math.min(...headings.map((h) => h.depth));
 
 const { remarkPluginFrontmatter } = await entry.render();
 
