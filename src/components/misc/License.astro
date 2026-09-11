@@ -1,6 +1,5 @@
 ---
-import { Icon } from "astro-icon/components";
-import { licenseConfig, profileConfig } from "../../config";
+import { profileConfig } from "../../config";
 import I18nKey from "../../i18n/i18nKey";
 import { i18n } from "../../i18n/translation";
 import { formatDateToYYYYMMDD } from "../../utils/date-utils";
@@ -12,32 +11,27 @@ interface Props {
 	class: string;
 }
 
-const { title, pubDate } = Astro.props;
+const { pubDate } = Astro.props;
 const className = Astro.props.class;
 const profileConf = profileConfig;
-const licenseConf = licenseConfig;
-const postUrl = decodeURIComponent(Astro.url.toString());
+const inkImages = [
+	"/images/license-card/ink-mountains.png",
+	"/images/license-card/ink-lake.png",
+];
+const inkImage = inkImages[Math.floor(Math.random() * inkImages.length)];
 ---
-<div class={`relative transition overflow-hidden bg-[var(--license-block-bg)] py-5 px-6 ${className}`}>
-    <div class="transition font-bold text-black/75 dark:text-white/75">
-        {title}
+<div class={`relative transition overflow-hidden bg-[var(--license-block-bg)] py-5 px-6 md:pr-56 ${className}`}>
+    <div class="pointer-events-none absolute inset-y-0 right-0 hidden w-56 md:block" aria-hidden="true">
+        <img src={inkImage} alt="" class="h-full w-full object-cover opacity-60 [mask-image:linear-gradient(to_left,black_0%,black_70%,transparent_100%)]" />
     </div>
-    <a href={postUrl} class="link text-[var(--primary)]">
-        {postUrl}
-    </a>
-    <div class="flex gap-6 mt-2">
+    <div class="relative flex flex-col gap-2 text-black/75 dark:text-white/75">
         <div>
-            <div class="transition text-black/30 dark:text-white/30 text-sm">{i18n(I18nKey.author)}</div>
-            <div class="transition text-black/75 dark:text-white/75 line-clamp-2">{profileConf.name}</div>
+            <span class="transition text-black/30 dark:text-white/30 text-sm">{i18n(I18nKey.author)}</span>
+            <span class="ml-3">{profileConf.name}</span>
         </div>
-        <div>
-            <div class="transition text-black/30 dark:text-white/30 text-sm">{i18n(I18nKey.publishedAt)}</div>
-            <div class="transition text-black/75 dark:text-white/75 line-clamp-2">{formatDateToYYYYMMDD(pubDate)}</div>
-        </div>
-        <div>
-            <div class="transition text-black/30 dark:text-white/30 text-sm">{i18n(I18nKey.license)}</div>
-            <a href={licenseConf.url} target="_blank" class="link text-[var(--primary)] line-clamp-2">{licenseConf.name}</a>
+        <div class="flex gap-6">
+            <span><span class="transition text-black/30 dark:text-white/30 text-sm">{i18n(I18nKey.publishedAt)}</span><span class="ml-3">{formatDateToYYYYMMDD(pubDate)}</span></span>
+            <span>保留所有权利</span>
         </div>
     </div>
-    <Icon name="fa6-brands:creative-commons" class="transition text-[15rem] absolute pointer-events-none right-6 top-1/2 -translate-y-1/2 text-black/5 dark:text-white/5"></Icon>
 </div>

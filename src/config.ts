@@ -67,7 +67,7 @@ export const navBarConfig: NavBarConfig = {
 
 export const profileConfig: ProfileConfig = {
 	avatar: "/favicon/favicon-192.png",
-	name: "深海客",
+	name: "来自海底忙碌的外星人",
 	bio: "写小说，也记录所见的人与地方。",
 	links: [
 		{
