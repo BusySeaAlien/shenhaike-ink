@@ -8,6 +8,7 @@ export const READING_MODES = Object.freeze({
 const MOBILE_MAX_WIDTH = 767;
 const INTERACTIVE_SELECTOR =
 	"a, button, input, select, textarea, summary, label, pre, code, .expressive-code, [contenteditable]";
+const TEXT_ENTRY_SELECTOR = "input, select, textarea, [contenteditable]";
 
 export const PAGE_TURN = Object.freeze({
 	PREVIOUS: -1,
@@ -73,6 +74,19 @@ export function canStartReadingGesture(target) {
 }
 
 /**
+ * Narrower than {@link isInteractiveReadingTarget}: only controls that consume
+ * arrow keys themselves. A focused button or link must keep paging, since the
+ * reader lands on the mode switch right before pressing a key.
+ */
+export function isTextEntryTarget(target) {
+	return Boolean(
+		target &&
+			typeof target.closest === "function" &&
+			target.closest(TEXT_ENTRY_SELECTOR),
+	);
+}
+
+/**
  * Maps a pointer position to a page turn. The reading column keeps a dead zone
  * around its centre; anything outside the column's left or right edge inherits
  * the nearest side, so the page margins stay clickable.
@@ -106,4 +120,24 @@ export function resolvePageTurnFromPosition(
 export function resolvePageTurnFromKey(key) {
 	const turn = PAGE_TURN_KEYS[key];
 	return typeof turn === "number" ? turn : PAGE_TURN.NONE;
+}
+
+/**
+ * Resolves a requested page turn. `blocked` marks a turn the reader asked for
+ * that could not move, meaning they are already at the first or last page.
+ *
+ * A request that lands back on the current page is not blocked: measurements and
+ * mode switches call `goToPage(currentPage)` internally and must stay silent.
+ */
+export function resolvePageTurn(currentPage, requestedPage, pageCount) {
+	const settled = clampPageIndex(currentPage, pageCount);
+	if (!Number.isFinite(requestedPage)) {
+		return { page: settled, blocked: false };
+	}
+
+	const page = clampPageIndex(requestedPage, pageCount);
+	return {
+		page,
+		blocked: page === settled && Math.floor(requestedPage) !== settled,
+	};
 }

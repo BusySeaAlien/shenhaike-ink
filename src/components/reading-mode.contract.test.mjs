@@ -117,3 +117,52 @@ test("page turning stands down while the lightbox is open", async () => {
 		"the PhotoSwipe overlay is a detached layer, so page turning must detect it explicitly",
 	);
 });
+
+test("turns blocked at either end surface a hint", async () => {
+	const component = await readFile(
+		new URL("./ReadingMode.astro", import.meta.url),
+		"utf8",
+	);
+	const css = await readFile(
+		new URL("../styles/shenhaike.css", import.meta.url),
+		"utf8",
+	);
+
+	for (const marker of [
+		"data-page-hint",
+		"dataset.pageHintDirection",
+		"showBoundaryHint",
+		"resolvePageTurn",
+	]) {
+		assert.ok(component.includes(marker), `missing hint marker: ${marker}`);
+	}
+
+	assert.ok(
+		css.includes('.reading-page-hint[data-page-hint-direction="previous"]'),
+		"the hint must anchor to the edge the reader tried to turn towards",
+	);
+	assert.ok(
+		css.includes('.reading-page-hint[data-visible="true"]'),
+		"the hint is revealed by state, not by the hidden attribute, so it can fade",
+	);
+	assert.ok(
+		component.includes("clearTimeout(hintTimer)"),
+		"the hint timer must be cleared so a stale timeout cannot outlive the reader",
+	);
+});
+
+test("keyboard paging survives focus held by a button or link", async () => {
+	const component = await readFile(
+		new URL("./ReadingMode.astro", import.meta.url),
+		"utf8",
+	);
+
+	assert.ok(
+		component.includes("isTextEntryTarget(event.target)"),
+		"keyboard paging must use the narrower text-entry filter",
+	);
+	assert.ok(
+		!component.includes("isInteractiveReadingTarget(event.target)"),
+		"keys must not reuse the click filter: the reader is still focused on the mode switch right after switching, and a button there would freeze paging",
+	);
+});

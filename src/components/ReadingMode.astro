@@ -24,14 +24,19 @@ const { title, wordCount, category } = Astro.props;
 		</div>
 	</div>
 
-	<div
-		class="reading-viewport"
-		data-reading-viewport
-		tabindex="-1"
-		aria-label="文章正文"
-	>
-		<div class="reading-content" data-reading-content>
-			<slot />
+	<!-- The hint and hit areas sit outside the viewport on purpose: the viewport is
+	     a horizontal scroll container, so absolutely positioned children would be
+	     carried off screen once the reader is past the first page. -->
+	<div class="reading-stage">
+		<div
+			class="reading-viewport"
+			data-reading-viewport
+			tabindex="-1"
+			aria-label="文章正文"
+		>
+			<div class="reading-content" data-reading-content>
+				<slot />
+			</div>
 		</div>
 		<span
 			class="reading-page-hit-area reading-page-hit-area-left"
@@ -45,6 +50,12 @@ const { title, wordCount, category } = Astro.props;
 			aria-hidden="true"
 			hidden
 		></span>
+		<div
+			class="reading-page-hint"
+			data-page-hint
+			data-visible="false"
+			aria-live="polite"
+		></div>
 	</div>
 
 	<div class="reading-page-status" data-page-status aria-live="polite" hidden>
@@ -58,12 +69,16 @@ import {
 	clampPageIndex,
 	getPageCount,
 	isInteractiveReadingTarget,
+	isTextEntryTarget,
 	READING_MODES,
 	READING_MODE_STORAGE_KEY,
+	resolvePageTurn,
 	resolvePageTurnFromKey,
 	resolvePageTurnFromPosition,
 	resolveReadingMode,
 } from "@utils/reading-mode.mjs";
+
+const HINT_DURATION = 1800;
 
 let activeController: AbortController | undefined;
 let swupHookRegistered = false;
@@ -83,6 +98,7 @@ function initReadingMode() {
 	const viewport = root.querySelector<HTMLElement>("[data-reading-viewport]")!;
 	const content = root.querySelector<HTMLElement>("[data-reading-content]")!;
 	const pageStatus = root.querySelector<HTMLElement>("[data-page-status]")!;
+	const pageHint = root.querySelector<HTMLElement>("[data-page-hint]")!;
 	const modeButtons = Array.from(
 		root.querySelectorAll<HTMLButtonElement>("[data-reading-mode]"),
 	);
@@ -90,7 +106,7 @@ function initReadingMode() {
 		root.querySelectorAll<HTMLElement>("[data-page-direction]"),
 	);
 
-	if (!toolbar || !viewport || !content || !pageStatus || modeButtons.length !== 2) {
+	if (!toolbar || !viewport || !content || !pageStatus || !pageHint || modeButtons.length !== 2) {
 		return;
 	}
 
@@ -103,6 +119,7 @@ function initReadingMode() {
 	let currentPage = 0;
 	let lastPagedPage = 0;
 	let resizeFrame = 0;
+	let hintTimer = 0;
 	let pointerStart: { x: number; y: number; id: number } | undefined;
 	let ignoreNextClick = false;
 
@@ -144,9 +161,23 @@ function initReadingMode() {
 		root.dataset.lastPage = String(currentPage === pageCount - 1);
 	}
 
+	function showBoundaryHint(direction: string) {
+		window.clearTimeout(hintTimer);
+		pageHint.dataset.pageHintDirection = direction;
+		// Reveal before writing, so assistive tech announces the new text with the
+		// element already visible rather than changing inside a hidden subtree.
+		pageHint.dataset.visible = "true";
+		pageHint.textContent = direction === "previous" ? "已经是第一页" : "已经是最后一页";
+		hintTimer = window.setTimeout(() => {
+			pageHint.dataset.visible = "false";
+		}, HINT_DURATION);
+	}
+
 	function goToPage(nextPage: number, smooth = true) {
 		if (!isPaged()) return;
-		currentPage = clampPageIndex(nextPage, pageCount);
+		const { page, blocked } = resolvePageTurn(currentPage, nextPage, pageCount);
+		if (blocked) showBoundaryHint(nextPage < currentPage ? "previous" : "next");
+		currentPage = page;
 		lastPagedPage = currentPage;
 		const stride = viewport.clientWidth + getPageGap();
 		viewport.scrollTo({
@@ -273,7 +304,10 @@ function initReadingMode() {
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (!isPaged() || isLightboxOpen() || isInteractiveReadingTarget(event.target)) return;
+		// Deliberately narrower than the click filter: a button or link holding
+		// focus still lets the reader page, which is the state they are in right
+		// after clicking the mode switch.
+		if (!isPaged() || isLightboxOpen() || isTextEntryTarget(event.target)) return;
 		const direction = resolvePageTurnFromKey(event.key);
 		if (!direction) return;
 		// ArrowLeft/ArrowRight would otherwise scroll the horizontal viewport on
@@ -320,6 +354,7 @@ function initReadingMode() {
 	signal.addEventListener("abort", () => {
 		resizeObserver.disconnect();
 		window.cancelAnimationFrame(resizeFrame);
+		window.clearTimeout(hintTimer);
 	}, { once: true });
 
 	for (const image of content.querySelectorAll("img")) {

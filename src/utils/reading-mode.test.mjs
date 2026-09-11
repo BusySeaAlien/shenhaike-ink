@@ -5,6 +5,8 @@ import {
 	clampPageIndex,
 	getPageCount,
 	isInteractiveReadingTarget,
+	isTextEntryTarget,
+	resolvePageTurn,
 	resolvePageTurnFromKey,
 	resolvePageTurnFromPosition,
 	resolveReadingMode,
@@ -55,6 +57,27 @@ test("interactive descendants do not trigger reading-surface navigation", () => 
 	assert.equal(isInteractiveReadingTarget(null), false);
 });
 
+test("only text-entry controls block keyboard paging", () => {
+	// Mirrors how closest() really matches: whole selector-list entries, never
+	// substrings. A substring check would let "a" match "textarea".
+	const makeTarget = (selector) => ({
+		closest: (list) =>
+			list.split(",").map((part) => part.trim()).includes(selector) ? {} : null,
+	});
+
+	assert.equal(isTextEntryTarget(makeTarget("input")), true);
+	assert.equal(isTextEntryTarget(makeTarget("textarea")), true);
+	assert.equal(isTextEntryTarget(makeTarget("select")), true);
+	assert.equal(isTextEntryTarget(makeTarget("[contenteditable]")), true);
+
+	// A focused button or link must not swallow arrow keys, otherwise paging dies
+	// right after the reader clicks the mode switch and never moves focus away.
+	assert.equal(isTextEntryTarget(makeTarget("button")), false);
+	assert.equal(isTextEntryTarget(makeTarget("a")), false);
+	assert.equal(isTextEntryTarget(makeTarget("pre")), false);
+	assert.equal(isTextEntryTarget(null), false);
+});
+
 test("clicks inside the reading column turn one page in either direction", () => {
 	const bounds = { left: 340, width: 760 };
 
@@ -94,4 +117,27 @@ test("unrelated keys and inherited object properties do not turn pages", () => {
 	assert.equal(resolvePageTurnFromKey(" "), 0);
 	assert.equal(resolvePageTurnFromKey("toString"), 0);
 	assert.equal(resolvePageTurnFromKey(undefined), 0);
+});
+
+test("turning past the first or last page is reported as blocked", () => {
+	assert.deepEqual(resolvePageTurn(0, -1, 10), { page: 0, blocked: true });
+	assert.deepEqual(resolvePageTurn(9, 10, 10), { page: 9, blocked: true });
+});
+
+test("turns that land on another page are not blocked", () => {
+	assert.deepEqual(resolvePageTurn(0, 1, 10), { page: 1, blocked: false });
+	assert.deepEqual(resolvePageTurn(5, 4, 10), { page: 4, blocked: false });
+	assert.deepEqual(resolvePageTurn(5, 6, 10), { page: 6, blocked: false });
+});
+
+test("re-syncing the current page is never reported as blocked", () => {
+	assert.deepEqual(resolvePageTurn(0, 0, 10), { page: 0, blocked: false });
+	assert.deepEqual(resolvePageTurn(3, 3, 10), { page: 3, blocked: false });
+	assert.deepEqual(resolvePageTurn(0, 0, 1), { page: 0, blocked: false });
+	assert.deepEqual(resolvePageTurn(3, Number.NaN, 10), { page: 3, blocked: false });
+});
+
+test("a single-page article reports both directions as blocked", () => {
+	assert.deepEqual(resolvePageTurn(0, -1, 1), { page: 0, blocked: true });
+	assert.deepEqual(resolvePageTurn(0, 1, 1), { page: 0, blocked: true });
 });
