@@ -18,8 +18,9 @@ test("article route renders one Markdown body inside accessible reading controls
 		"data-reading-mode=",
 		"data-page-status",
 		"aria-pressed",
+		"viewport.tabIndex = paged ? 0 : -1",
 	]) {
-		assert.match(component, new RegExp(marker));
+		assert.ok(component.includes(marker), `missing component marker: ${marker}`);
 	}
 
 	assert.match(route, /import ReadingMode/);
