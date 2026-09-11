@@ -40,6 +40,9 @@ jobs:
       - name: Run Astro Check
         run: pnpm astro check
 
+      - name: Run Tests
+        run: pnpm test
+
   build:
     strategy:
       matrix:

@@ -8,7 +8,7 @@ interface Props {
 const { title, wordCount, category } = Astro.props;
 ---
 
-<section class="reading-mode" data-reading-root data-mode="scroll" data-ready="false">
+<section class="reading-mode" data-reading-root data-mode="scroll">
 	<div class="paged-reading-header">
 		<div class="paged-reading-summary" data-pagefind-ignore>
 			<strong title={title}>{title}</strong>
@@ -60,6 +60,8 @@ import {
 	isInteractiveReadingTarget,
 	READING_MODES,
 	READING_MODE_STORAGE_KEY,
+	resolvePageTurnFromKey,
+	resolvePageTurnFromPosition,
 	resolveReadingMode,
 } from "@utils/reading-mode.mjs";
 
@@ -122,6 +124,13 @@ function initReadingMode() {
 
 	function isPaged() {
 		return root.dataset.mode === READING_MODES.PAGED;
+	}
+
+	// PhotoSwipe renders its lightbox as a detached full-screen layer, so surface
+	// clicks and keys reach the document without passing through the viewport.
+	// It marks that layer with `pswp--open` for the whole open lifetime.
+	function isLightboxOpen() {
+		return Boolean(document.querySelector(".pswp--open"));
 	}
 
 	function getPageGap() {
@@ -223,6 +232,8 @@ function initReadingMode() {
 			ignoreNextClick = false;
 			return;
 		}
+		if (isLightboxOpen()) return;
+
 		const target = event.target instanceof Element ? event.target : null;
 		if (
 			!target ||
@@ -233,10 +244,13 @@ function initReadingMode() {
 			return;
 		}
 
+		// Only the band the reading column occupies turns pages, so clicks on the
+		// navbar, the page counter, the licence card or the footer stay inert.
 		const bounds = viewport.getBoundingClientRect();
-		const position = (event.clientX - bounds.left) / bounds.width;
-		if (position <= 0.3) goToPage(currentPage - 1);
-		if (position >= 0.7) goToPage(currentPage + 1);
+		if (event.clientY < bounds.top || event.clientY > bounds.bottom) return;
+
+		const direction = resolvePageTurnFromPosition(event.clientX, bounds);
+		if (direction) goToPage(currentPage + direction);
 	}
 
 	function handlePointerDown(event: PointerEvent) {
@@ -259,15 +273,13 @@ function initReadingMode() {
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (!isPaged() || isInteractiveReadingTarget(event.target)) return;
-		if (event.key === "ArrowLeft" || event.key === "PageUp") {
-			event.preventDefault();
-			goToPage(currentPage - 1);
-		}
-		if (event.key === "ArrowRight" || event.key === "PageDown") {
-			event.preventDefault();
-			goToPage(currentPage + 1);
-		}
+		if (!isPaged() || isLightboxOpen() || isInteractiveReadingTarget(event.target)) return;
+		const direction = resolvePageTurnFromKey(event.key);
+		if (!direction) return;
+		// ArrowLeft/ArrowRight would otherwise scroll the horizontal viewport on
+		// their own and fight the page transition.
+		event.preventDefault();
+		goToPage(currentPage + direction);
 	}
 
 	function handleAnchor(event: MouseEvent) {
@@ -291,11 +303,14 @@ function initReadingMode() {
 		);
 	}
 
-	viewport.addEventListener("click", turnFromSurface, { signal });
+	// Clicks and keys are observed on the document so the page margins stay
+	// clickable and the arrow keys work without focusing the viewport first.
+	// Both handlers must stay bound here only, or a single input turns two pages.
+	document.addEventListener("click", turnFromSurface, { signal });
+	document.addEventListener("keydown", handleKeydown, { signal });
 	viewport.addEventListener("pointerdown", handlePointerDown, { signal });
 	viewport.addEventListener("pointerup", handlePointerUp, { signal });
 	viewport.addEventListener("pointercancel", () => { pointerStart = undefined; }, { signal });
-	viewport.addEventListener("keydown", handleKeydown, { signal });
 	document.addEventListener("click", handleAnchor, { signal });
 	window.addEventListener("resize", () => scheduleMeasure(), { signal });
 
@@ -313,7 +328,6 @@ function initReadingMode() {
 	document.fonts?.ready.then(() => scheduleMeasure()).catch(() => {});
 
 	toolbar.hidden = false;
-	root.dataset.ready = "true";
 	const initialMode = resolveReadingMode(readStoredMode(), window.innerWidth);
 	applyMode(initialMode);
 }

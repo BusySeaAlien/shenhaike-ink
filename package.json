@@ -1,11 +1,12 @@
 {
-  "name": "fuwari",
+  "name": "shenhaike-ink",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
     "check": "astro check",
+    "test": "node --test src/**/*.test.mjs",
     "build": "astro build && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",

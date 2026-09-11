@@ -9,6 +9,21 @@ const MOBILE_MAX_WIDTH = 767;
 const INTERACTIVE_SELECTOR =
 	"a, button, input, select, textarea, summary, label, pre, code, .expressive-code, [contenteditable]";
 
+export const PAGE_TURN = Object.freeze({
+	PREVIOUS: -1,
+	NONE: 0,
+	NEXT: 1,
+});
+
+const PAGE_TURN_KEYS = Object.freeze({
+	ArrowUp: PAGE_TURN.PREVIOUS,
+	ArrowLeft: PAGE_TURN.PREVIOUS,
+	PageUp: PAGE_TURN.PREVIOUS,
+	ArrowDown: PAGE_TURN.NEXT,
+	ArrowRight: PAGE_TURN.NEXT,
+	PageDown: PAGE_TURN.NEXT,
+});
+
 export function resolveReadingMode(storedMode, viewportWidth) {
 	if (
 		storedMode === READING_MODES.PAGED ||
@@ -55,4 +70,40 @@ export function canStartReadingGesture(target) {
 			!target.closest("img") &&
 			!isInteractiveReadingTarget(target),
 	);
+}
+
+/**
+ * Maps a pointer position to a page turn. The reading column keeps a dead zone
+ * around its centre; anything outside the column's left or right edge inherits
+ * the nearest side, so the page margins stay clickable.
+ */
+export function resolvePageTurnFromPosition(
+	clientX,
+	bounds,
+	edgeRatio = 0.3,
+) {
+	if (
+		!Number.isFinite(clientX) ||
+		!bounds ||
+		!Number.isFinite(bounds.left) ||
+		!Number.isFinite(bounds.width) ||
+		bounds.width <= 0
+	) {
+		return PAGE_TURN.NONE;
+	}
+
+	if (clientX <= bounds.left + bounds.width * edgeRatio) {
+		return PAGE_TURN.PREVIOUS;
+	}
+
+	if (clientX >= bounds.left + bounds.width * (1 - edgeRatio)) {
+		return PAGE_TURN.NEXT;
+	}
+
+	return PAGE_TURN.NONE;
+}
+
+export function resolvePageTurnFromKey(key) {
+	const turn = PAGE_TURN_KEYS[key];
+	return typeof turn === "number" ? turn : PAGE_TURN.NONE;
 }

@@ -96,8 +96,6 @@ body:not(:has(.reading-page)) #toc-wrapper { display: none; }
   overscroll-behavior: contain;
   touch-action: pan-y;
 }
-html:has(.reading-mode[data-mode="paged"]),
-body:has(.reading-mode[data-mode="paged"]) { overflow-y: hidden; }
 .reading-mode[data-mode="paged"] .reading-content {
   width: var(--reading-page-width);
   height: 100%;

@@ -54,7 +54,7 @@ test("paged reading CSS defines columns, navigation surfaces, and fragmentation 
 	assert.doesNotMatch(css, /\.custom-md > :is\([^)]*\bul\b/);
 });
 
-test("paged reading overrides the legacy Markdown width and compacts article chrome", async () => {
+test("paged reading overrides the legacy Markdown width and keeps page-tail navigation reachable", async () => {
 	const css = await readFile(
 		new URL("../styles/shenhaike.css", import.meta.url),
 		"utf8",
@@ -70,8 +70,50 @@ test("paged reading overrides the legacy Markdown width and compacts article chr
 		css.includes('#post-container:has(.reading-mode[data-mode="paged"])'),
 		"paged mode must provide compact article-header spacing",
 	);
+	assert.doesNotMatch(
+		css,
+		/(?:html|body):has\(\.reading-mode\[data-mode="paged"\]\)[^{]*\{[^}]*overflow-y:\s*hidden/,
+		"paged mode must leave document scrolling available for content after the reader",
+	);
+});
+
+test("reading controls do not expose an unused data-ready state", async () => {
+	const component = await readFile(
+		new URL("./ReadingMode.astro", import.meta.url),
+		"utf8",
+	);
+
+	assert.doesNotMatch(component, /data-ready|dataset\.ready/);
+});
+
+test("page turning listens on the document without duplicating viewport bindings", async () => {
+	const component = await readFile(
+		new URL("./ReadingMode.astro", import.meta.url),
+		"utf8",
+	);
+
+	for (const marker of [
+		'document.addEventListener("click", turnFromSurface, { signal })',
+		'document.addEventListener("keydown", handleKeydown, { signal })',
+	]) {
+		assert.ok(component.includes(marker), `missing document binding: ${marker}`);
+	}
+
+	assert.doesNotMatch(
+		component,
+		/viewport\.addEventListener\(\s*"(?:click|keydown)"/,
+		"a duplicate viewport binding would turn two pages per input",
+	);
+});
+
+test("page turning stands down while the lightbox is open", async () => {
+	const component = await readFile(
+		new URL("./ReadingMode.astro", import.meta.url),
+		"utf8",
+	);
+
 	assert.ok(
-		css.includes('body:has(.reading-mode[data-mode="paged"]) { overflow-y: hidden; }'),
-		"paged mode must not require vertical document scrolling",
+		component.includes(".pswp--open"),
+		"the PhotoSwipe overlay is a detached layer, so page turning must detect it explicitly",
 	);
 });
