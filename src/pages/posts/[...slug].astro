@@ -54,7 +54,7 @@ const jsonLd = {
             {}
         ]}>
             <!-- word count and reading time -->
-            <div class="flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation">
+            <div class="post-reading-stats flex flex-row text-black/30 dark:text-white/30 gap-5 mb-3 transition onload-animation">
                 <div class="flex flex-row items-center">
                     <div class="transition h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2">
                         <Icon name="material-symbols:notes-rounded"></Icon>
@@ -88,13 +88,13 @@ const jsonLd = {
             <!-- metadata -->
             <div class="onload-animation">
                 <PostMetadata
-                        class="mb-5"
+                        class="post-reading-meta mb-5"
                         published={entry.data.published}
                         updated={entry.data.updated}
                         tags={entry.data.tags}
                         category={entry.data.category}
                 ></PostMetadata>
-                {!entry.data.image && <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5"></div>}
+                {!entry.data.image && <div class="post-reading-divider border-[var(--line-divider)] border-dashed border-b-[1px] mb-5"></div>}
             </div>
 
             <!-- always show cover as long as it has one -->
@@ -105,7 +105,7 @@ const jsonLd = {
 
 
             {siteConfig.toc.enable && headings.length > 0 && <details class="mobile-reading-toc"><summary>文章目录</summary><nav aria-label="文章目录">{headings.filter(h => h.depth < minHeadingDepth + siteConfig.toc.depth).map(h => <a href={`#${h.slug}`}>{h.text}</a>)}</nav></details>}
-            <ReadingMode>
+            <ReadingMode title={entry.data.title} wordCount={remarkPluginFrontmatter.words} category={entry.data.category}>
                 <Markdown class={`mb-6 markdown-content onload-animation ${["小说", "随笔"].includes(entry.data.category || "") ? "literary-content" : ""}`}>
                     <Content />
                 </Markdown>

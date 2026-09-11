@@ -1,12 +1,26 @@
 ---
+interface Props {
+	title: string;
+	wordCount: number;
+	category?: string | null;
+}
+
+const { title, wordCount, category } = Astro.props;
 ---
 
 <section class="reading-mode" data-reading-root data-mode="scroll" data-ready="false">
-	<div class="reading-mode-toolbar" data-reading-toolbar hidden>
-		<span class="reading-mode-label">阅读方式</span>
-		<div class="reading-mode-switch" role="group" aria-label="阅读模式">
-			<button type="button" data-reading-mode="paged" aria-pressed="false">分页</button>
-			<button type="button" data-reading-mode="scroll" aria-pressed="true">滚动</button>
+	<div class="paged-reading-header">
+		<div class="paged-reading-summary" data-pagefind-ignore>
+			<strong title={title}>{title}</strong>
+			<span>{wordCount} 字</span>
+			<span>{category || "未分类"}</span>
+		</div>
+		<div class="reading-mode-toolbar" data-reading-toolbar hidden>
+			<span class="reading-mode-label">阅读方式</span>
+			<div class="reading-mode-switch" role="group" aria-label="阅读模式">
+				<button type="button" data-reading-mode="paged" aria-pressed="false">分页</button>
+				<button type="button" data-reading-mode="scroll" aria-pressed="true">滚动</button>
+			</div>
 		</div>
 	</div>
 
@@ -137,6 +151,9 @@ function initReadingMode() {
 		if (!isPaged()) return;
 		const previousProgress =
 			preserveProgress && pageCount > 1 ? currentPage / (pageCount - 1) : 0;
+		const viewportTop = Math.max(0, viewport.getBoundingClientRect().top);
+		const availableHeight = Math.max(240, window.innerHeight - viewportTop - 48);
+		root.style.setProperty("--reading-page-height", `${Math.floor(availableHeight)}px`);
 		const pageWidth = viewport.clientWidth;
 		root.style.setProperty("--reading-page-width", `${pageWidth}px`);
 		pageCount = getPageCount(content.scrollWidth, pageWidth, getPageGap());
@@ -178,8 +195,10 @@ function initReadingMode() {
 
 		if (paged) {
 			currentPage = lastPagedPage;
-			scheduleMeasure(false);
+			window.scrollTo({ top: 0, behavior: "auto" });
+			window.requestAnimationFrame(() => scheduleMeasure(false));
 		} else {
+			root.style.removeProperty("--reading-page-height");
 			viewport.scrollLeft = 0;
 			if (previousMode === READING_MODES.PAGED && previousProgress > 0) {
 				window.requestAnimationFrame(() => {
