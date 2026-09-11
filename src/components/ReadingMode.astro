@@ -1,0 +1,301 @@
+---
+---
+
+<section class="reading-mode" data-reading-root data-mode="scroll" data-ready="false">
+	<div class="reading-mode-toolbar" data-reading-toolbar hidden>
+		<span class="reading-mode-label">阅读方式</span>
+		<div class="reading-mode-switch" role="group" aria-label="阅读模式">
+			<button type="button" data-reading-mode="paged" aria-pressed="false">分页</button>
+			<button type="button" data-reading-mode="scroll" aria-pressed="true">滚动</button>
+		</div>
+	</div>
+
+	<div
+		class="reading-viewport"
+		data-reading-viewport
+		tabindex="0"
+		aria-label="文章正文"
+	>
+		<div class="reading-content" data-reading-content>
+			<slot />
+		</div>
+		<span
+			class="reading-page-hit-area reading-page-hit-area-left"
+			data-page-direction="previous"
+			aria-hidden="true"
+			hidden
+		></span>
+		<span
+			class="reading-page-hit-area reading-page-hit-area-right"
+			data-page-direction="next"
+			aria-hidden="true"
+			hidden
+		></span>
+	</div>
+
+	<div class="reading-page-status" data-page-status aria-live="polite" hidden>
+		1 / 1
+	</div>
+</section>
+
+<script>
+import {
+	clampPageIndex,
+	getPageCount,
+	isInteractiveReadingTarget,
+	READING_MODES,
+	READING_MODE_STORAGE_KEY,
+	resolveReadingMode,
+} from "@utils/reading-mode.mjs";
+
+let activeController: AbortController | undefined;
+let swupHookRegistered = false;
+
+function initReadingMode() {
+	activeController?.abort();
+	activeController = undefined;
+
+	const root = document.querySelector<HTMLElement>("[data-reading-root]")!;
+	if (!root) return;
+
+	const toolbar = root.querySelector<HTMLElement>("[data-reading-toolbar]")!;
+	const viewport = root.querySelector<HTMLElement>("[data-reading-viewport]")!;
+	const content = root.querySelector<HTMLElement>("[data-reading-content]")!;
+	const pageStatus = root.querySelector<HTMLElement>("[data-page-status]")!;
+	const modeButtons = Array.from(
+		root.querySelectorAll<HTMLButtonElement>("[data-reading-mode]"),
+	);
+	const hitAreas = Array.from(
+		root.querySelectorAll<HTMLElement>("[data-page-direction]"),
+	);
+
+	if (!toolbar || !viewport || !content || !pageStatus || modeButtons.length !== 2) {
+		return;
+	}
+
+	const controller = new AbortController();
+	activeController = controller;
+	const { signal } = controller;
+	const supportsPagedMode = CSS.supports("column-width", "1px");
+	const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+	let pageCount = 1;
+	let currentPage = 0;
+	let lastPagedPage = 0;
+	let resizeFrame = 0;
+	let pointerStart: { x: number; y: number; id: number } | undefined;
+	let ignoreNextClick = false;
+
+	function readStoredMode() {
+		try {
+			return localStorage.getItem(READING_MODE_STORAGE_KEY);
+		} catch {
+			return null;
+		}
+	}
+
+	function storeMode(mode: string) {
+		try {
+			localStorage.setItem(READING_MODE_STORAGE_KEY, mode);
+		} catch {
+			// Storage can be unavailable in privacy modes; the current choice still works.
+		}
+	}
+
+	function isPaged() {
+		return root.dataset.mode === READING_MODES.PAGED;
+	}
+
+	function getPageGap() {
+		const value = getComputedStyle(root).getPropertyValue("--reading-page-gap");
+		return Number.parseFloat(value) || 0;
+	}
+
+	function updatePageStatus() {
+		pageStatus.textContent = `${currentPage + 1} / ${pageCount}`;
+		root.dataset.firstPage = String(currentPage === 0);
+		root.dataset.lastPage = String(currentPage === pageCount - 1);
+	}
+
+	function goToPage(nextPage: number, smooth = true) {
+		if (!isPaged()) return;
+		currentPage = clampPageIndex(nextPage, pageCount);
+		lastPagedPage = currentPage;
+		const stride = viewport.clientWidth + getPageGap();
+		viewport.scrollTo({
+			left: currentPage * stride,
+			behavior: smooth && !reduceMotion.matches ? "smooth" : "auto",
+		});
+		updatePageStatus();
+	}
+
+	function measurePages(preserveProgress = true) {
+		if (!isPaged()) return;
+		const previousProgress =
+			preserveProgress && pageCount > 1 ? currentPage / (pageCount - 1) : 0;
+		const pageWidth = viewport.clientWidth;
+		root.style.setProperty("--reading-page-width", `${pageWidth}px`);
+		pageCount = getPageCount(content.scrollWidth, pageWidth, getPageGap());
+		currentPage = clampPageIndex(
+			Math.round(previousProgress * Math.max(0, pageCount - 1)),
+			pageCount,
+		);
+		goToPage(currentPage, false);
+	}
+
+	function scheduleMeasure(preserveProgress = true) {
+		window.cancelAnimationFrame(resizeFrame);
+		resizeFrame = window.requestAnimationFrame(() => {
+			window.requestAnimationFrame(() => measurePages(preserveProgress));
+		});
+	}
+
+	function applyMode(mode: string, savePreference = false) {
+		const nextMode =
+			mode === READING_MODES.PAGED && supportsPagedMode
+				? READING_MODES.PAGED
+				: READING_MODES.SCROLL;
+		const previousMode = root.dataset.mode;
+		const previousProgress = pageCount > 1 ? currentPage / (pageCount - 1) : 0;
+
+		root.dataset.mode = nextMode;
+		for (const button of modeButtons) {
+			const selected = button.dataset.readingMode === nextMode;
+			button.setAttribute("aria-pressed", String(selected));
+			button.disabled = button.dataset.readingMode === READING_MODES.PAGED && !supportsPagedMode;
+		}
+
+		const paged = nextMode === READING_MODES.PAGED;
+		pageStatus.hidden = !paged;
+		for (const hitArea of hitAreas) hitArea.hidden = !paged;
+
+		if (savePreference) storeMode(nextMode);
+
+		if (paged) {
+			currentPage = lastPagedPage;
+			scheduleMeasure(false);
+		} else {
+			viewport.scrollLeft = 0;
+			if (previousMode === READING_MODES.PAGED && previousProgress > 0) {
+				window.requestAnimationFrame(() => {
+					const availableScroll = Math.max(0, content.scrollHeight - window.innerHeight);
+					window.scrollTo({
+						top: content.getBoundingClientRect().top + window.scrollY + availableScroll * previousProgress,
+						behavior: reduceMotion.matches ? "auto" : "smooth",
+					});
+				});
+			}
+		}
+	}
+
+	function turnFromSurface(event: MouseEvent) {
+		if (!isPaged() || ignoreNextClick || event.button !== 0) {
+			ignoreNextClick = false;
+			return;
+		}
+		const target = event.target instanceof Element ? event.target : null;
+		if (
+			!target ||
+			target.closest("img") ||
+			isInteractiveReadingTarget(target) ||
+			window.getSelection()?.toString()
+		) {
+			return;
+		}
+
+		const bounds = viewport.getBoundingClientRect();
+		const position = (event.clientX - bounds.left) / bounds.width;
+		if (position <= 0.3) goToPage(currentPage - 1);
+		if (position >= 0.7) goToPage(currentPage + 1);
+	}
+
+	function handlePointerDown(event: PointerEvent) {
+		if (!isPaged() || event.pointerType === "mouse") return;
+		pointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
+	}
+
+	function handlePointerUp(event: PointerEvent) {
+		if (!pointerStart || pointerStart.id !== event.pointerId || !isPaged()) return;
+		const deltaX = event.clientX - pointerStart.x;
+		const deltaY = event.clientY - pointerStart.y;
+		pointerStart = undefined;
+		if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+		ignoreNextClick = true;
+		goToPage(currentPage + (deltaX < 0 ? 1 : -1));
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (!isPaged() || isInteractiveReadingTarget(event.target)) return;
+		if (event.key === "ArrowLeft" || event.key === "PageUp") {
+			event.preventDefault();
+			goToPage(currentPage - 1);
+		}
+		if (event.key === "ArrowRight" || event.key === "PageDown") {
+			event.preventDefault();
+			goToPage(currentPage + 1);
+		}
+	}
+
+	function handleAnchor(event: MouseEvent) {
+		if (!isPaged()) return;
+		const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href^="#"]') : null;
+		if (!anchor) return;
+		const id = decodeURIComponent(anchor.hash.slice(1));
+		const target = id ? document.getElementById(id) : null;
+		if (!target || !content.contains(target)) return;
+		event.preventDefault();
+		const stride = viewport.clientWidth + getPageGap();
+		goToPage(Math.round(target.offsetLeft / stride));
+		history.replaceState(null, "", anchor.hash);
+	}
+
+	for (const button of modeButtons) {
+		button.addEventListener(
+			"click",
+			() => applyMode(button.dataset.readingMode ?? READING_MODES.SCROLL, true),
+			{ signal },
+		);
+	}
+
+	viewport.addEventListener("click", turnFromSurface, { signal });
+	viewport.addEventListener("pointerdown", handlePointerDown, { signal });
+	viewport.addEventListener("pointerup", handlePointerUp, { signal });
+	viewport.addEventListener("pointercancel", () => { pointerStart = undefined; }, { signal });
+	viewport.addEventListener("keydown", handleKeydown, { signal });
+	document.addEventListener("click", handleAnchor, { signal });
+	window.addEventListener("resize", () => scheduleMeasure(), { signal });
+
+	const resizeObserver = new ResizeObserver(() => scheduleMeasure());
+	resizeObserver.observe(viewport);
+	resizeObserver.observe(content);
+	signal.addEventListener("abort", () => {
+		resizeObserver.disconnect();
+		window.cancelAnimationFrame(resizeFrame);
+	}, { once: true });
+
+	for (const image of content.querySelectorAll("img")) {
+		if (!image.complete) image.addEventListener("load", () => scheduleMeasure(), { signal, once: true });
+	}
+	document.fonts?.ready.then(() => scheduleMeasure()).catch(() => {});
+
+	toolbar.hidden = false;
+	root.dataset.ready = "true";
+	const initialMode = resolveReadingMode(readStoredMode(), window.innerWidth);
+	applyMode(initialMode);
+}
+
+function registerReadingMode() {
+	initReadingMode();
+	if (swupHookRegistered) return;
+	const registerSwupHook = () => {
+		if (!window.swup?.hooks || swupHookRegistered) return;
+		swupHookRegistered = true;
+		window.swup.hooks.on("page:view", initReadingMode);
+	};
+	registerSwupHook();
+	if (!swupHookRegistered) {
+		document.addEventListener("swup:enable", registerSwupHook, { once: true });
+	}
+}
+
+registerReadingMode();
+</script>

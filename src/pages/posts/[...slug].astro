@@ -11,6 +11,7 @@ import { Icon } from "astro-icon/components";
 import { licenseConfig } from "src/config";
 import ImageWrapper from "../../components/misc/ImageWrapper.astro";
 import PostMetadata from "../../components/PostMeta.astro";
+import ReadingMode from "../../components/ReadingMode.astro";
 import { profileConfig, siteConfig } from "../../config";
 import { formatDateToYYYYMMDD } from "../../utils/date-utils";
 
@@ -104,9 +105,11 @@ const jsonLd = {
 
 
             {siteConfig.toc.enable && headings.length > 0 && <details class="mobile-reading-toc"><summary>文章目录</summary><nav aria-label="文章目录">{headings.filter(h => h.depth < minHeadingDepth + siteConfig.toc.depth).map(h => <a href={`#${h.slug}`}>{h.text}</a>)}</nav></details>}
-            <Markdown class={`mb-6 markdown-content onload-animation ${["小说", "随笔"].includes(entry.data.category || "") ? "literary-content" : ""}`}>
-                <Content />
-            </Markdown>
+            <ReadingMode>
+                <Markdown class={`mb-6 markdown-content onload-animation ${["小说", "随笔"].includes(entry.data.category || "") ? "literary-content" : ""}`}>
+                    <Content />
+                </Markdown>
+            </ReadingMode>
 
             {licenseConfig.enable && <License title={entry.data.title} slug={entry.slug} pubDate={entry.data.published} class="mb-6 rounded-xl license-container onload-animation"></License>}
 

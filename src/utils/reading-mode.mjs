@@ -22,16 +22,17 @@ export function resolveReadingMode(storedMode, viewportWidth) {
 		: READING_MODES.SCROLL;
 }
 
-export function getPageCount(scrollWidth, pageWidth) {
+export function getPageCount(scrollWidth, pageWidth, pageGap = 0) {
 	if (
 		!Number.isFinite(scrollWidth) ||
 		!Number.isFinite(pageWidth) ||
+		!Number.isFinite(pageGap) ||
 		pageWidth <= 0
 	) {
 		return 1;
 	}
 
-	return Math.max(1, Math.ceil(scrollWidth / pageWidth));
+	return Math.max(1, Math.ceil((scrollWidth + pageGap) / (pageWidth + pageGap)));
 }
 
 export function clampPageIndex(index, pageCount) {

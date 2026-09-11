@@ -22,6 +22,7 @@ test("page count is rounded up and never below one", () => {
 	assert.equal(getPageCount(0, 720), 1);
 	assert.equal(getPageCount(720, 720), 1);
 	assert.equal(getPageCount(721, 720), 2);
+	assert.equal(getPageCount(1464, 720, 24), 2);
 });
 
 test("page index is clamped to the available range", () => {
