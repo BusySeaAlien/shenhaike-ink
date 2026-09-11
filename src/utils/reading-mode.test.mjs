@@ -18,8 +18,12 @@ test("saved reading mode overrides the viewport default", () => {
 });
 
 test("swipe gestures start only on non-interactive reading content", () => {
-	const image = { closest: (selector) => (selector.includes("img") ? image : null) };
-	const link = { closest: (selector) => (selector.includes("a") ? link : null) };
+	const image = {
+		closest: (selector) => (selector.includes("img") ? image : null),
+	};
+	const link = {
+		closest: (selector) => (selector.includes("a") ? link : null),
+	};
 	const paragraph = { closest: () => null };
 
 	assert.equal(canStartReadingGesture(image), false);
@@ -49,7 +53,9 @@ test("page index is clamped to the available range", () => {
 });
 
 test("interactive descendants do not trigger reading-surface navigation", () => {
-	const link = { closest: (selector) => (selector.includes("a") ? link : null) };
+	const link = {
+		closest: (selector) => (selector.includes("a") ? link : null),
+	};
 	const paragraph = { closest: () => null };
 
 	assert.equal(isInteractiveReadingTarget(link), true);
@@ -62,7 +68,12 @@ test("only text-entry controls block keyboard paging", () => {
 	// substrings. A substring check would let "a" match "textarea".
 	const makeTarget = (selector) => ({
 		closest: (list) =>
-			list.split(",").map((part) => part.trim()).includes(selector) ? {} : null,
+			list
+				.split(",")
+				.map((part) => part.trim())
+				.includes(selector)
+				? {}
+				: null,
 	});
 
 	assert.equal(isTextEntryTarget(makeTarget("input")), true);
@@ -99,7 +110,10 @@ test("clicks in the page margins beyond the reading column turn the nearest page
 
 test("position resolution degrades to no turn without usable bounds", () => {
 	assert.equal(resolvePageTurnFromPosition(100, { left: 0, width: 0 }), 0);
-	assert.equal(resolvePageTurnFromPosition(Number.NaN, { left: 0, width: 100 }), 0);
+	assert.equal(
+		resolvePageTurnFromPosition(Number.NaN, { left: 0, width: 100 }),
+		0,
+	);
 	assert.equal(resolvePageTurnFromPosition(100, undefined), 0);
 });
 
@@ -134,7 +148,10 @@ test("re-syncing the current page is never reported as blocked", () => {
 	assert.deepEqual(resolvePageTurn(0, 0, 10), { page: 0, blocked: false });
 	assert.deepEqual(resolvePageTurn(3, 3, 10), { page: 3, blocked: false });
 	assert.deepEqual(resolvePageTurn(0, 0, 1), { page: 0, blocked: false });
-	assert.deepEqual(resolvePageTurn(3, Number.NaN, 10), { page: 3, blocked: false });
+	assert.deepEqual(resolvePageTurn(3, Number.NaN, 10), {
+		page: 3,
+		blocked: false,
+	});
 });
 
 test("a single-page article reports both directions as blocked", () => {

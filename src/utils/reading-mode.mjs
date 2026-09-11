@@ -48,7 +48,10 @@ export function getPageCount(scrollWidth, pageWidth, pageGap = 0) {
 		return 1;
 	}
 
-	return Math.max(1, Math.ceil((scrollWidth + pageGap) / (pageWidth + pageGap)));
+	return Math.max(
+		1,
+		Math.ceil((scrollWidth + pageGap) / (pageWidth + pageGap)),
+	);
 }
 
 export function clampPageIndex(index, pageCount) {
@@ -91,11 +94,7 @@ export function isTextEntryTarget(target) {
  * around its centre; anything outside the column's left or right edge inherits
  * the nearest side, so the page margins stay clickable.
  */
-export function resolvePageTurnFromPosition(
-	clientX,
-	bounds,
-	edgeRatio = 0.3,
-) {
+export function resolvePageTurnFromPosition(clientX, bounds, edgeRatio = 0.3) {
 	if (
 		!Number.isFinite(clientX) ||
 		!bounds ||

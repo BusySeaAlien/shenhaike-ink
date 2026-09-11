@@ -22,7 +22,10 @@ test("article route renders one Markdown body inside accessible reading controls
 		"cleanupReadingMode",
 		'"content:replace"',
 	]) {
-		assert.ok(component.includes(marker), `missing component marker: ${marker}`);
+		assert.ok(
+			component.includes(marker),
+			`missing component marker: ${marker}`,
+		);
 	}
 
 	assert.match(route, /import ReadingMode/);
@@ -96,7 +99,10 @@ test("page turning listens on the document without duplicating viewport bindings
 		'document.addEventListener("click", turnFromSurface, { signal })',
 		'document.addEventListener("keydown", handleKeydown, { signal })',
 	]) {
-		assert.ok(component.includes(marker), `missing document binding: ${marker}`);
+		assert.ok(
+			component.includes(marker),
+			`missing document binding: ${marker}`,
+		);
 	}
 
 	assert.doesNotMatch(

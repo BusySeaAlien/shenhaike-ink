@@ -1,0 +1,4 @@
+# Keep text files at LF both in the repository and in the working tree.
+# With core.autocrlf=true a Windows checkout expands LF to CRLF, which Biome
+# reports as a formatting error — and only locally, since CI checks out on Linux.
+* text=auto eol=lf
