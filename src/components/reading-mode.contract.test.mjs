@@ -29,3 +29,22 @@ test("article route renders one Markdown body inside accessible reading controls
 		/<ReadingMode>[\s\S]*<Markdown\b[\s\S]*<\/Markdown>[\s\S]*<\/ReadingMode>/,
 	);
 });
+
+test("paged reading CSS defines columns, navigation surfaces, and fragmentation rules", async () => {
+	const css = await readFile(
+		new URL("../styles/shenhaike.css", import.meta.url),
+		"utf8",
+	);
+
+	for (const marker of [
+		'.reading-mode[data-mode="paged"]',
+		"column-width:",
+		"column-gap:",
+		"column-fill:",
+		".reading-page-hit-area",
+		"break-inside: avoid",
+		"prefers-reduced-motion: reduce",
+	]) {
+		assert.ok(css.includes(marker), `missing CSS marker: ${marker}`);
+	}
+});
