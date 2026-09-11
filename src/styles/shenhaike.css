@@ -107,7 +107,7 @@ body:not(:has(.reading-page)) #toc-wrapper { display: none; }
   column-gap: var(--reading-page-gap);
   column-fill: auto;
 }
-.reading-mode[data-mode="paged"] .custom-md > :is(h1, h2, h3, h4, h5, h6, figure, blockquote, ul, ol, table, .expressive-code, .katex-display-container),
+.reading-mode[data-mode="paged"] .custom-md > :is(h1, h2, h3, h4, h5, h6, figure, blockquote, table, .expressive-code, .katex-display-container),
 .reading-mode[data-mode="paged"] .custom-md li,
 .reading-mode[data-mode="paged"] .custom-md img {
   break-inside: avoid;
@@ -121,6 +121,10 @@ body:not(:has(.reading-page)) #toc-wrapper { display: none; }
   object-fit: contain;
 }
 .reading-mode[data-mode="paged"] .custom-md :is(blockquote, table, .expressive-code, .katex-display-container) {
+  max-height: calc(var(--reading-page-height) - 2rem);
+  overflow: auto;
+}
+.reading-mode[data-mode="paged"] .custom-md li {
   max-height: calc(var(--reading-page-height) - 2rem);
   overflow: auto;
 }

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+	canStartReadingGesture,
 	clampPageIndex,
 	getPageCount,
 	isInteractiveReadingTarget,
@@ -10,6 +11,17 @@ import {
 test("saved reading mode overrides the viewport default", () => {
 	assert.equal(resolveReadingMode("scroll", 375), "scroll");
 	assert.equal(resolveReadingMode("paged", 1440), "paged");
+});
+
+test("swipe gestures start only on non-interactive reading content", () => {
+	const image = { closest: (selector) => (selector.includes("img") ? image : null) };
+	const link = { closest: (selector) => (selector.includes("a") ? link : null) };
+	const paragraph = { closest: () => null };
+
+	assert.equal(canStartReadingGesture(image), false);
+	assert.equal(canStartReadingGesture(link), false);
+	assert.equal(canStartReadingGesture(paragraph), true);
+	assert.equal(canStartReadingGesture(null), false);
 });
 
 test("missing or invalid preference uses the 767px breakpoint", () => {

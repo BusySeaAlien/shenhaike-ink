@@ -40,6 +40,7 @@
 
 <script>
 import {
+	canStartReadingGesture,
 	clampPageIndex,
 	getPageCount,
 	isInteractiveReadingTarget,
@@ -51,9 +52,13 @@ import {
 let activeController: AbortController | undefined;
 let swupHookRegistered = false;
 
-function initReadingMode() {
+function cleanupReadingMode() {
 	activeController?.abort();
 	activeController = undefined;
+}
+
+function initReadingMode() {
+	cleanupReadingMode();
 
 	const root = document.querySelector<HTMLElement>("[data-reading-root]")!;
 	if (!root) return;
@@ -189,7 +194,13 @@ function initReadingMode() {
 	}
 
 	function turnFromSurface(event: MouseEvent) {
-		if (!isPaged() || ignoreNextClick || event.button !== 0) {
+		if (!isPaged() || event.button !== 0) {
+			ignoreNextClick = false;
+			return;
+		}
+		if (ignoreNextClick) {
+			event.preventDefault();
+			event.stopPropagation();
 			ignoreNextClick = false;
 			return;
 		}
@@ -210,7 +221,11 @@ function initReadingMode() {
 	}
 
 	function handlePointerDown(event: PointerEvent) {
-		if (!isPaged() || event.pointerType === "mouse") return;
+		if (
+			!isPaged() ||
+			event.pointerType === "mouse" ||
+			!canStartReadingGesture(event.target)
+		) return;
 		pointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
 	}
 
@@ -290,6 +305,7 @@ function registerReadingMode() {
 	const registerSwupHook = () => {
 		if (!window.swup?.hooks || swupHookRegistered) return;
 		swupHookRegistered = true;
+		window.swup.hooks.on("content:replace", cleanupReadingMode, { before: true });
 		window.swup.hooks.on("page:view", initReadingMode);
 	};
 	registerSwupHook();

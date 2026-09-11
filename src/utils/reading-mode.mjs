@@ -47,3 +47,12 @@ export function isInteractiveReadingTarget(target) {
 			target.closest(INTERACTIVE_SELECTOR),
 	);
 }
+
+export function canStartReadingGesture(target) {
+	return Boolean(
+		target &&
+			typeof target.closest === "function" &&
+			!target.closest("img") &&
+			!isInteractiveReadingTarget(target),
+	);
+}

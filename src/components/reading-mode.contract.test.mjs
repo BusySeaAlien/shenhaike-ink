@@ -19,6 +19,8 @@ test("article route renders one Markdown body inside accessible reading controls
 		"data-page-status",
 		"aria-pressed",
 		"viewport.tabIndex = paged ? 0 : -1",
+		"cleanupReadingMode",
+		'"content:replace"',
 	]) {
 		assert.ok(component.includes(marker), `missing component marker: ${marker}`);
 	}
@@ -48,4 +50,5 @@ test("paged reading CSS defines columns, navigation surfaces, and fragmentation 
 	]) {
 		assert.ok(css.includes(marker), `missing CSS marker: ${marker}`);
 	}
+	assert.doesNotMatch(css, /\.custom-md > :is\([^)]*\bul\b/);
 });
